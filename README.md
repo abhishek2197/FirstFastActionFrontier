@@ -26,7 +26,8 @@ Built at the Fireworks Deploy Buildathon (Nov 2, 2026).
 1. **Spec cards, not scraped data.** Each incident family is defined by a
    spec card — signature signals, gold triage label, variation axes, and one
    embedded red herring. Incidents are generated *from* the label, so the
-   gold answer is correct by construction.
+   gold answer is correct by construction. For detailed research and spec card
+   blueprints across 15 production agent failure modes, see [PATTERNS.md](PATTERNS.md).
 2. **Teacher-generated curriculum.** A frontier model (Muse Spark) generates
    realistic incidents from the spec cards. Every example is verified:
    programmatic checks (schema, label set, dedupe), a model cross-check

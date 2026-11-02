@@ -1,0 +1,7 @@
+# Agent local skills & environment
+.agents/
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
