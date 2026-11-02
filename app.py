@@ -124,13 +124,21 @@ st.sidebar.markdown("---")
 confidence_thresh = st.sidebar.slider("Zero-Trust Confidence Threshold", min_value=0.50, max_value=0.99, value=0.80, step=0.05)
 st.sidebar.info("💡 **Harness Rule**: If student score < threshold or any invariant fails, router automatically escalates to 120B+ Ultra Teacher.")
 
+# Load side-by-side comparison data
+COMPARISON_DATA = []
+comparison_path = os.path.join(PROJECT_ROOT, "eval_results", "side_by_side_comparison.json")
+if os.path.exists(comparison_path):
+    with open(comparison_path) as _f:
+        COMPARISON_DATA = json.load(_f)
+
 # Main Navigation Tabs
-tab_overview, tab_demo, tab_benchmarks, tab_finetuning, tab_pitch = st.tabs([
+tab_overview, tab_compare, tab_demo, tab_benchmarks, tab_finetuning, tab_pitch = st.tabs([
     "🚀 Executive Overview",
+    "🔍 Side-by-Side Comparison",
     "⚡ Live Triage Simulator",
-    "📊 Benchmarks & Statistical Evidence",
-    "🔬 SFT Fine-Tuning & Lineage",
-    "🎬 60s Video Recording Pitch"
+    "📊 Benchmarks & Evidence",
+    "🔬 SFT Fine-Tuning",
+    "🎬 Video Pitch"
 ])
 
 # ==============================================================================
@@ -228,7 +236,197 @@ with tab_overview:
     """)
 
 # ==============================================================================
-# TAB 2: LIVE TRIAGE SIMULATOR
+# TAB 2: SIDE-BY-SIDE MODEL COMPARISON (15 HELD-OUT INCIDENTS)
+# ==============================================================================
+with tab_compare:
+    st.markdown("### 🔍 Side-by-Side Model Comparison: Prompt → Response")
+    st.caption("15 held-out production incidents evaluated across all 4 approaches. Compare response quality, latency, cost, and correctness in real time.")
+
+    if not COMPARISON_DATA:
+        st.error("Comparison data not found. Run the evaluation pipeline first.")
+    else:
+        # Incident selector
+        incident_labels = [f"{i+1}. {d['title'][:80]}..." if len(d['title']) > 80 else f"{i+1}. {d['title']}" for i, d in enumerate(COMPARISON_DATA)]
+        selected_idx = st.selectbox("Select Production Incident:", range(len(incident_labels)), format_func=lambda i: incident_labels[i])
+        inc = COMPARISON_DATA[selected_idx]
+
+        # --- INCIDENT PROMPT PANEL ---
+        st.markdown("---")
+        st.markdown(f"#### 🚨 Incident: `{inc['pattern'].replace('_', ' ').title()}`")
+        st.markdown(f"**{inc['title']}**")
+
+        with st.expander("📄 Full Incident Prompt (Alert + Logs + Context)", expanded=False):
+            st.markdown("**🔔 Alert:**")
+            st.code(inc['alert'], language="text")
+            st.markdown("**📋 Logs:**")
+            st.code(inc['logs'][:1500] + ("..." if len(inc['logs']) > 1500 else ""), language="text")
+            st.markdown("**🌐 Context:**")
+            st.code(inc['context'], language="text")
+
+        # --- GOLD STANDARD ---
+        with st.expander("🏅 Ground Truth (Gold Standard)", expanded=False):
+            gold = inc['gold']
+            gcol1, gcol2 = st.columns(2)
+            with gcol1:
+                st.markdown(f"**Pattern:** `{gold['pattern']}`")
+                st.markdown(f"**Severity:** `{gold['severity']}`")
+                st.markdown(f"**Escalate:** `{gold['escalate']}`")
+            with gcol2:
+                st.markdown(f"**Root Cause:** {gold['root_cause'][:300]}...")
+                st.markdown(f"**First Action:** {gold['first_action'][:300]}...")
+
+        # --- SIDE-BY-SIDE RESPONSE CARDS ---
+        st.markdown("---")
+        st.markdown("#### ⚔️ Model Responses — Side by Side")
+
+        # Metric summary row
+        models = [
+            ("base", "🟤 Base 30B", "#94a3b8"),
+            ("finetuned", "🔵 Fine-Tuned 30B (B200)", "#38bdf8"),
+            ("ultra", "🟣 Ultra Teacher (120B+)", "#818cf8"),
+            ("harness", "🟢 Compound Harness", "#10b981"),
+        ]
+
+        # --- KPI comparison row: Latency / Cost / JSON Valid ---
+        mcols = st.columns(4)
+        for col_st, (key, label, color) in zip(mcols, models):
+            m = inc[key]
+            with col_st:
+                lat_display = f"⏱ {m['latency']:.2f}s" if m['latency'] < 60 else "⏱ 60.0s ⚠️ TIMEOUT"
+                json_badge = "✅" if m['json_valid'] else "❌"
+                cost_display = f"${m['cost_per_1k']:.2f}/1k"
+
+                # Pattern match check
+                pattern_match = m.get('pattern', '') == inc['gold']['pattern']
+                pattern_icon = "✅" if pattern_match else "❌"
+
+                timeout_warning = ""
+                if m.get('is_timeout'):
+                    timeout_warning = '<br><span style="color: #ef4444; font-weight: 700;">⚠️ REASONING PARALYSIS (60s timeout)</span>'
+
+                route_info = ""
+                if key == "harness":
+                    route_info = f'<br><span style="color: #10b981; font-size: 0.8rem;">Route: {m.get("route_taken", "N/A")}</span>'
+                    route_info += f'<br><span style="color: #10b981; font-size: 0.8rem;">Verifier: {m.get("verifier_status", "N/A")}</span>'
+
+                st.markdown(f"""
+                <div class="kpi-card" style="border-left: 4px solid {color};">
+                    <div style="font-weight: 700; color: {color}; font-size: 1rem; margin-bottom: 0.5rem;">{label}</div>
+                    <div style="color: #e2e8f0; font-size: 0.9rem; line-height: 1.8;">
+                        {lat_display}<br>
+                        💰 {cost_display}<br>
+                        📄 JSON Valid: {json_badge}<br>
+                        🎯 Pattern: {pattern_icon} <code>{m.get('pattern', 'N/A')}</code><br>
+                        🏷️ Severity: <code>{m.get('severity', 'N/A')}</code><br>
+                        📐 Reasoning: {m.get('reasoning_len', 0):,} chars
+                        {timeout_warning}
+                        {route_info}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # --- Detailed Response Comparison (expandable per model) ---
+        st.markdown("---")
+        st.markdown("#### 📝 Detailed Responses")
+
+        for key, label, color in models:
+            m = inc[key]
+            with st.expander(f"{label}  —  ⏱ {m['latency']:.2f}s  |  💰 ${m['cost_per_1k']:.2f}/1k  |  🎯 `{m.get('pattern', 'N/A')}`", expanded=(key == "harness")):
+                rcol1, rcol2 = st.columns(2)
+                with rcol1:
+                    st.markdown("**🔎 Root Cause Analysis:**")
+                    rc_text = m.get('root_cause', 'N/A (Timeout / Paralysis)')
+                    if m.get('is_timeout'):
+                        st.error(f"⚠️ Model exceeded 60s hard ceiling due to {m.get('reasoning_len', 10000):,} character reasoning token loop. No structured output produced.")
+                    else:
+                        st.info(rc_text)
+                with rcol2:
+                    st.markdown("**🛠️ Prescribed First Action:**")
+                    action_text = m.get('first_action', 'N/A (Timeout / Paralysis)')
+                    if m.get('is_timeout'):
+                        st.error("No action produced — model entered reasoning paralysis loop.")
+                    else:
+                        st.success(action_text)
+
+                # Show escalation decision
+                esc = m.get('escalate', None)
+                false_esc = m.get('false_escalation', False)
+                gold_esc = inc['gold']['escalate']
+                esc_col1, esc_col2, esc_col3 = st.columns(3)
+                with esc_col1:
+                    st.metric("Escalation Decision", "Yes" if esc else "No", delta="Correct" if esc == gold_esc else "WRONG", delta_color="normal" if esc == gold_esc else "inverse")
+                with esc_col2:
+                    st.metric("False Escalation", "Yes ⚠️" if false_esc else "No ✅")
+                with esc_col3:
+                    if key == "harness":
+                        st.metric("Route Taken", m.get('route_taken', 'N/A')[:30])
+                    else:
+                        st.metric("Reasoning Length", f"{m.get('reasoning_len', 0):,} chars")
+
+        # --- Latency comparison bar chart ---
+        st.markdown("---")
+        st.markdown("#### 📊 Latency & Cost Comparison for This Incident")
+        lat_col, cost_col = st.columns(2)
+        with lat_col:
+            lat_names = [label for _, label, _ in models]
+            lat_vals = [min(inc[key]['latency'], 60.0) for key, _, _ in models]
+            lat_colors = [color for _, _, color in models]
+            fig_lat_bar = go.Figure(data=[go.Bar(
+                x=lat_names, y=lat_vals,
+                marker_color=lat_colors,
+                text=[f"{v:.2f}s" if v < 60 else "60s ⏱ TIMEOUT" for v in lat_vals],
+                textposition='outside'
+            )])
+            fig_lat_bar.update_layout(
+                title="<b>Response Latency (seconds)</b>",
+                yaxis_title="Seconds",
+                template="plotly_dark",
+                height=350,
+                yaxis_range=[0, max(lat_vals) * 1.3]
+            )
+            st.plotly_chart(fig_lat_bar, use_container_width=True)
+
+        with cost_col:
+            cost_vals = [inc[key]['cost_per_1k'] for key, _, _ in models]
+            fig_cost_bar = go.Figure(data=[go.Bar(
+                x=lat_names, y=cost_vals,
+                marker_color=lat_colors,
+                text=[f"${v:.2f}" for v in cost_vals],
+                textposition='outside'
+            )])
+            fig_cost_bar.update_layout(
+                title="<b>Cost per 1,000 Incidents (USD)</b>",
+                yaxis_title="USD",
+                template="plotly_dark",
+                height=350,
+                yaxis_range=[0, max(cost_vals) * 1.4]
+            )
+            st.plotly_chart(fig_cost_bar, use_container_width=True)
+
+        # --- Aggregate scorecard across all 15 incidents ---
+        st.markdown("---")
+        st.markdown("#### 🏆 Aggregate Scorecard (All 15 Held-Out Incidents)")
+        agg_data = {}
+        for key, label, color in models:
+            latencies = [d[key]['latency'] for d in COMPARISON_DATA]
+            pattern_matches = sum(1 for d in COMPARISON_DATA if d[key].get('pattern') == d['gold']['pattern'])
+            json_valids = sum(1 for d in COMPARISON_DATA if d[key].get('json_valid', False))
+            timeouts = sum(1 for d in COMPARISON_DATA if d[key].get('is_timeout', False))
+            false_escs = sum(1 for d in COMPARISON_DATA if d[key].get('false_escalation', False))
+            agg_data[label] = {
+                "Avg Latency (s)": round(sum(latencies) / len(latencies), 2),
+                "Pattern Match": f"{pattern_matches}/15 ({pattern_matches/15*100:.0f}%)",
+                "JSON Valid": f"{json_valids}/15",
+                "Timeouts": timeouts,
+                "False Escalations": false_escs,
+                "Cost/1k": f"${COMPARISON_DATA[0][key]['cost_per_1k']:.2f}"
+            }
+        df_agg = pd.DataFrame(agg_data).T
+        df_agg.index.name = "Model"
+        st.dataframe(df_agg, use_container_width=True)
+
+# ==============================================================================
+# TAB 3: LIVE TRIAGE SIMULATOR
 # ==============================================================================
 with tab_demo:
     st.markdown("### ⚡ Live Incident Triage Simulator")

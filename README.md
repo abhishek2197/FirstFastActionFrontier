@@ -1,13 +1,14 @@
 # First Fast Action Frontier
-### Autonomous Speculative Incident Triage Router & Continuous LoRA Distillation Engine
+### Teaching a 30B open model to triage production incidents like a senior on-call: synthetic incident training, held-out eval, and a real-postmortem test set.
 
 [![Fireworks AI](https://img.shields.io/badge/Fireworks.ai-Deploy%20Buildathon-red)](https://fireworks.ai)
 [![NVIDIA Nemotron](https://img.shields.io/badge/NVIDIA-Nemotron--3.5--30B%20%26%20Ultra-76B900)](https://fireworks.ai/models/nemotron)
+[![Microsoft](https://img.shields.io/badge/Microsoft-Agentic%20Telemetry-00A4EF)](https://github.com/microsoft)
 [![Evidence First](https://img.shields.io/badge/Evaluation-Evidence--First-blue)](README.md)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 > **Built for the Fireworks Deploy Buildathon (November 2, 2026 / San Francisco)**  
-> *Built together by Fireworks AI, Microsoft, NVIDIA, and Hacker//Squad.*  
+> *Built together with Fireworks AI, Microsoft, and NVIDIA.*  
 > *"Evidence comes first: Demonstrating that specialized open models and compound harnesses outperform frontier baselines on mission-critical production tasks."*
 
 ---
@@ -19,7 +20,7 @@
 | **1. Benchmark Evaluation** | [`eval_results/`](eval_results/) & Section below | **500-Case Held-Out Benchmark**, 95% Wilson Score CIs, McNemar's p < 0.0001, Quality/Cost/Latency disclosure |
 | **2. Business Value** | Section below & [`PATTERNS.md`](PATTERNS.md) | **Minute-Five SRE Triage Crisis**: 15.1x faster P99 (<500ms vs 7.56s), 93.1% cheaper, 0% paralysis loops |
 | **3. Technical Execution** | [`src/`](src/), [`architecture/`](architecture/) | **Compound Speculative Architecture**: 30B Student + 2ms Zero-Trust Verifier + Ultra Fallback + LoRA Distillation |
-| **4. Presentation & Demo** | [`demo/`](demo/) | **<60-Second Video Script**, interactive CLI (`python3 demo/run_demo.py`), runnable [`demo/demo.ipynb`](demo/demo.ipynb) |
+| **4. Presentation & Demo** | [`demo/`](demo/), [`app.py`](app.py) | **<60-Second Video Script**, interactive Streamlit command center, CLI (`python3 demo/run_demo.py`), runnable [`demo/demo.ipynb`](demo/demo.ipynb) |
 | **5. Documentation** | Complete README & [`scripts/`](scripts/) | Fully reproducible 1-click evaluation, clean environment setup, and verifiable commands |
 
 ---
@@ -34,12 +35,36 @@ At **minute five** of a production outage, the clock is ticking against catastro
 - **Dynamic Teacher Escalation**: Ambiguous cases escalate to Nemotron-3 Ultra; failures are automatically logged to a **Shadow Distillation Buffer** to continuously fine-tune the student via LoRA.
 
 ### 🏃 Quick Demo Links:
+- 🖥️ **Interactive Streamlit Command Center (Visual Dashboard & Live Inference)**:
+  ```bash
+  streamlit run app.py
+  ```
 - 🎬 **[60-Second Video / Pitch Script](demo/README.md)** (Designed for hackathon judges, strictly under 60 seconds)
 - 💻 **Interactive CLI Demo (<3 seconds)**:
   ```bash
   python3 demo/run_demo.py
   ```
 - 📓 **[Runnable Jupyter Walkthrough](demo/demo.ipynb)**: Step-by-step interactive inspection of live telemetry, verifier trace, and latency measurements.
+
+---
+
+## 🧱 Tech Stack & Hackathon Origin
+
+### Tech Stack
+- **Fireworks AI**: Managed Supervised LoRA Fine-Tuning on 2× NVIDIA H200s ([job `q71jm97v`](https://app.fireworks.ai/dashboard/fine-tuning/supervised/q71jm97v)), sub-second serverless inference, and high-performance dedicated B200 180GB deployment ([`ofe8xcd1`](https://app.fireworks.ai/models/nemotron)).
+- **NVIDIA**: Nemotron-Lightning-3.5-30B (Mamba-MoE hybrid student `nemotron_h`), Nemotron-3-Ultra-NVFP4 (frontier teacher), running on NVIDIA Blackwell B200 and Hopper H200 silicon.
+- **Microsoft**: Multi-agent incident telemetry patterns (Semantic Kernel / Autogen agent retry loops, memory sync lag, and distributed cloud failover dynamics).
+- **Streamlit & Plotly**: Real-time visual incident triage command center ([`app.py`](app.py)) for live incident dispatch, 2ms verification telemetry, and Pareto frontier performance curves.
+
+### Pre-Existing Code vs. What Was Built During This Hackathon
+* **What Existed Before**: An empty repository (`88d9309 Initial commit`) and the Fireworks training cookbook reference examples (`.cookbook/`).
+* **What We Built During This Hackathon**:
+  1. **Taxonomy & Anti-Circularity Dataset**: Formulated 15 production SRE agentic failure modes ([`PATTERNS.md`](PATTERNS.md)) and synthesized a 500-incident stratified dataset ([`data/`](data/)).
+  2. **Evaluation Harness & Baseline Analysis**: Evaluated raw Nemotron 30B against Nemotron-3 Ultra ([`scripts/evaluate_nemotron.py`](scripts/evaluate_nemotron.py)), uncovering a 33.3% reasoning timeout rate and 48% pattern accuracy in the base model.
+  3. **Supervised LoRA Fine-Tuning**: Trained [`accounts/itas97/models/nemotron-30b-first-fast-action-v1`](https://app.fireworks.ai/dashboard/fine-tuning/supervised/q71jm97v) on 2× H200s, achieving -34.4% evaluation loss and -42.5% perplexity.
+  4. **Production Deployment on NVIDIA B200**: Deployed to 1× B200 180GB (`accounts/itas97/deployments/ofe8xcd1`), delivering 100% JSON validity and 4.18s latency on live held-out test sets.
+  5. **Compound Speculative Router & Zero-Trust Verifier**: Built the sub-2ms deterministic verification engine ([`src/verifier.py`](src/verifier.py)), speculative router ([`src/router.py`](src/router.py)), and shadow distillation buffer ([`data/shadow_buffer.jsonl`](data/shadow_buffer.jsonl)).
+  6. **Interactive Command Center**: Built the Streamlit visual application ([`app.py`](app.py)), CLI runner ([`demo/run_demo.py`](demo/run_demo.py)), and Jupyter walkthrough ([`demo/demo.ipynb`](demo/demo.ipynb)).
 
 ---
 
