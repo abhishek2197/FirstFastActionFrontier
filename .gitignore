@@ -1,5 +1,6 @@
 # Agent local skills & environment
 .agents/
+.cookbook/
 .env
 .venv/
 __pycache__/

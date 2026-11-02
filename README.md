@@ -76,12 +76,22 @@ At **minute five** of a production outage, the clock is ticking against catastro
 MODEL / SYSTEM                            PATTERN ACCURACY (95% CI)     JSON VALIDITY (95% CI)   MEAN LATENCY  P99 LATENCY   COST/1K
 ========================================================================================================
 Nemotron Lightning 3.5 30B (Base Student)   48.0% [37.0% - 59.3%]        66.7% [55.4% - 76.3%]      25.57s       60.00s*      $0.20
+Nemotron-30B Fine-Tuned (q71jm97v SFT)      Eval Loss: 1.058 (-34.4%)    PPL: 2.879 (-42.5%)        Adapter Saved / Ready     $0.20
 Nemotron-3 Ultra NVFP4 (~120B+ Teacher)     78.7% [68.1% - 86.4%]       100.0% [95.1% - 100.0%]      7.56s        9.84s       $3.50
 --------------------------------------------------------------------------------------------------------
 First Fast Action Frontier (Harness)        94.2% [90.8% - 96.4%]       100.0% [99.2% - 100.0%]      0.48s        0.82s       $0.24
 ========================================================================================================
 * 33.3% of Base 30B requests exceeded the 60s hard ceiling due to 10k+ character reasoning token loops.
 ```
+
+### Fine-Tuned Student Model (`accounts/itas97/models/nemotron-30b-first-fast-action-v1`)
+- **Supervised Fine-Tuning Job**: [`accounts/itas97/supervisedFineTuningJobs/q71jm97v`](https://app.fireworks.ai/dashboard/fine-tuning/supervised/q71jm97v)
+- **Base Model**: `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b`
+- **Training Tokens / Epochs**: 3 Epochs (180 gradient steps) over 500 stratified incident cases
+- **Hyperparameters**: LoRA Rank 16, Alpha 32, Batch Size 8 samples, Learning Rate 1e-4
+- **Convergence**: Evaluation loss dropped from **1.611** to **1.058** (**-34.4%**), perplexity dropped from **5.008** to **2.879** (**-42.5%**).
+- Full details documented in [`fine_tuning/RUN_SUMMARY.md`](fine_tuning/RUN_SUMMARY.md).
+
 
 ### Statistical Significance Tests
 1. **McNemar's Test (First Fast Action Frontier vs Nemotron-3 Ultra)**:
