@@ -1,6 +1,5 @@
 # Zero-Trust Deterministic Triage Verifier Specification
 
-> **Rubric Alignment**: Technical Execution (20/20 Points)  
 > *Sub-2ms deterministic verification vs brittle multi-turn LLM judge.*
 
 ---

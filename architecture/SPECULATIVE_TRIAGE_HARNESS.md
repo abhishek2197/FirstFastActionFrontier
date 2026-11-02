@@ -1,7 +1,6 @@
 # Compound Speculative Incident Triage Harness
 
-> **Rubric Alignment**: Technical Execution (20/20 Points)  
-> *Demonstrating justified complexity, robust engineering, and multi-tier architectural design.*
+> *Demonstrating robust engineering, deterministic verification, and multi-tier architectural design.*
 
 ---
 

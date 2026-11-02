@@ -1,6 +1,5 @@
 # Gap Analysis: Nemotron Lightning 3.5 30B vs Nemotron-3 Ultra NVFP4 vs First Fast Action Frontier
 
-> **Rubric Alignment**: Benchmark Evaluation (40/40 Points)  
 > *500-case held-out benchmark with 95% Wilson Score Confidence Intervals, McNemar's Significance Test, and Latency/Cost Tradeoff Disclosures.*
 
 ---

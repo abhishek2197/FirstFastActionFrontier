@@ -1,6 +1,5 @@
 # First Fast Action Frontier — 60-Second Presentation & Demo Script
 
-> **Judging Rubric Alignment**: Presentation & Demonstration (10/10 Points)  
 > *Target Duration: 58 seconds (Strictly under 60s)*
 
 ---

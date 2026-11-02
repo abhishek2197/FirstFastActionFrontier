@@ -3,28 +3,28 @@
 
 [![Fireworks AI](https://img.shields.io/badge/Fireworks.ai-Deploy%20Buildathon-red)](https://fireworks.ai)
 [![NVIDIA Nemotron](https://img.shields.io/badge/NVIDIA-Nemotron--3.5--30B%20%26%20Ultra-76B900)](https://fireworks.ai/models/nemotron)
-[![Evidence First](https://img.shields.io/badge/Rubric-100%20Points%20Aligned-blue)](README.md)
+[![Evidence First](https://img.shields.io/badge/Evaluation-Evidence--First-blue)](README.md)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 > **Built for the Fireworks Deploy Buildathon (November 2, 2026 / San Francisco)**  
 > *Built together by Fireworks AI, Microsoft, NVIDIA, and Hacker//Squad.*  
-> *"100 points. Evidence comes first. Show that specialized open models or a harness beat a frontier-model baseline on a valuable task."*
+> *"Evidence comes first: Demonstrating that specialized open models and compound harnesses outperform frontier baselines on mission-critical production tasks."*
 
 ---
 
-## 🧭 Repository & Judging Rubric Map
+## 🧭 Project Architecture & Evaluation Map
 
-| Rubric Criterion | Points | Where It's Solved in This Repository | Evidence & Deliverable |
-|---|---|---|---|
-| **1. Benchmark Evaluation** | **40 pts** | [`eval_results/`](eval_results/) & Section below | **500-Case Held-Out Benchmark**, 95% Wilson Score CIs, McNemar's p < 0.0001, Quality/Cost/Latency disclosure |
-| **2. Business Value** | **25 pts** | Section below & [`PATTERNS.md`](PATTERNS.md) | **Minute-Five SRE Triage Crisis**: 15.1x faster P99 (<500ms vs 7.56s), 93.1% cheaper, 0% paralysis loops |
-| **3. Technical Execution** | **20 pts** | [`src/`](src/), [`architecture/`](architecture/) | **Compound Speculative Architecture**: 30B Student + 2ms Zero-Trust Verifier + Ultra Fallback + LoRA Distillation |
-| **4. Presentation & Demo** | **10 pts** | [`demo/`](demo/) | **<60-Second Video Script**, interactive CLI (`python3 demo/run_demo.py`), runnable [`demo/demo.ipynb`](demo/demo.ipynb) |
-| **5. Documentation** | **5 pts** | Complete README & [`scripts/`](scripts/) | Fully reproducible 1-click evaluation, clean environment setup, and verifiable commands |
+| Pillar | Where It's Solved in This Repository | Evidence & Deliverables |
+|---|---|---|
+| **1. Benchmark Evaluation** | [`eval_results/`](eval_results/) & Section below | **500-Case Held-Out Benchmark**, 95% Wilson Score CIs, McNemar's p < 0.0001, Quality/Cost/Latency disclosure |
+| **2. Business Value** | Section below & [`PATTERNS.md`](PATTERNS.md) | **Minute-Five SRE Triage Crisis**: 15.1x faster P99 (<500ms vs 7.56s), 93.1% cheaper, 0% paralysis loops |
+| **3. Technical Execution** | [`src/`](src/), [`architecture/`](architecture/) | **Compound Speculative Architecture**: 30B Student + 2ms Zero-Trust Verifier + Ultra Fallback + LoRA Distillation |
+| **4. Presentation & Demo** | [`demo/`](demo/) | **<60-Second Video Script**, interactive CLI (`python3 demo/run_demo.py`), runnable [`demo/demo.ipynb`](demo/demo.ipynb) |
+| **5. Documentation** | Complete README & [`scripts/`](scripts/) | Fully reproducible 1-click evaluation, clean environment setup, and verifiable commands |
 
 ---
 
-## ⚡ 1. Executive Summary & 60-Second Demonstration (10 Points)
+## ⚡ 1. Executive Summary & 60-Second Demonstration
 
 At **minute five** of a production outage, the clock is ticking against catastrophic SLA breaches. Engineers and autonomous agents are bombarded with thousands of fragmented log lines and telemetry alerts. Today's frontier reasoning models take **7–25 seconds** to reason, cost **\$3.50+ per thousand calls**, and suffer from **reasoning paralysis loops (33.3% timeouts)**.
 
@@ -43,7 +43,7 @@ At **minute five** of a production outage, the clock is ticking against catastro
 
 ---
 
-## 💼 2. The Problem & Quantified Business Value (25 Points)
+## 💼 2. The Problem & Quantified Business Value
 
 ### The Target User & Problem
 - **Target User**: On-call Site Reliability Engineers (SREs), DevOps Leads, and autonomous agent orchestration platforms.
@@ -62,7 +62,7 @@ At **minute five** of a production outage, the clock is ticking against catastro
 
 ---
 
-## 📊 3. Benchmark Evaluation & Statistical Evidence (40 Points)
+## 📊 3. Benchmark Evaluation & Statistical Evidence
 
 ### Benchmark Methodology
 - **Held-Out Test Suite**: 500 rigorously verified production incident test cases stratified across **15 distinct agentic failure patterns** and **4 cloud architectures** (Kubernetes, Streaming, Agentic Workflows, Enterprise DBs). Detailed in [`PATTERNS.md`](PATTERNS.md).
@@ -107,7 +107,7 @@ First Fast Action Frontier (Harness)        94.2% [90.8% - 96.4%]       100.0% [
 
 ---
 
-## 🛠️ 4. Compound Architecture & Technical Execution (20 Points)
+## 🛠️ 4. Compound Architecture & Technical Execution
 
 The core technical contribution is the **Speculative Incident Triage Harness** with a continuous feedback loop:
 
@@ -164,7 +164,7 @@ flowchart TD
 
 ---
 
-## 🚀 5. Quickstart & Reproducibility (5 Points)
+## 🚀 5. Quickstart & Reproducibility
 
 ### Prerequisites
 - Python 3.10+
