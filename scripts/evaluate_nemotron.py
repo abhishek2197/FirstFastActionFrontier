@@ -223,6 +223,7 @@ def evaluate_case(case, api_key, model_name="accounts/fireworks/models/nemotron-
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate Nemotron on synthetic test cases")
+    parser.add_argument("--model", type=str, default="accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b", help="Model endpoint on Fireworks")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of test cases to evaluate")
     parser.add_argument("--quick", action="store_true", help="Run 1 case per pattern (15 cases total)")
     parser.add_argument("--workers", type=int, default=3, help="Concurrent worker threads")
@@ -250,15 +251,20 @@ def main():
         print(f"Running on first {len(cases)} test cases.")
     else:
         cases = all_cases
-        print(f"Running full evaluation on all {len(cases)} test cases.")
+        print(f"Running full evaluation on all {len(cases)} test cases with model {args.model}.")
 
     os.makedirs("eval_results", exist_ok=True)
     results = []
     t_start = time.time()
 
-    print(f"Evaluating with {args.workers} concurrent workers...")
+    is_ultra = "ultra" in args.model.lower()
+    model_display_name = "Nemotron-3 Ultra NVFP4 (~120B+)" if is_ultra else "Nemotron Lightning 3.5 30B (Base)"
+    out_prefix = "nemotron_ultra" if is_ultra else "nemotron"
+    out_report_name = "NEMOTRON_ULTRA_REPORT.md" if is_ultra else "NEMOTRON_BASELINE_REPORT.md"
+
+    print(f"Evaluating {model_display_name} with {args.workers} concurrent workers...")
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = {executor.submit(evaluate_case, c, api_key): c for c in cases}
+        futures = {executor.submit(evaluate_case, c, api_key, args.model): c for c in cases}
         completed = 0
         for future in as_completed(futures):
             res = future.result()
@@ -279,7 +285,7 @@ def main():
     avg_latency = sum(r.get("latency", 0) for r in results) / max(1, total)
 
     print("\n" + "="*50)
-    print("EVALUATION SUMMARY: Nemotron Lightning 3.5 30B (Base)")
+    print(f"EVALUATION SUMMARY: {model_display_name}")
     print("="*50)
     print(f"Total Cases Evaluated:       {total}")
     print(f"JSON Validity Rate:          {json_valid_cnt}/{total} ({json_valid_cnt/total*100:.1f}%)")
@@ -293,16 +299,16 @@ def main():
     print("="*50)
 
     # Save detailed JSONL
-    out_jsonl = "eval_results/nemotron_eval_results.jsonl"
+    out_jsonl = f"eval_results/{out_prefix}_eval_results.jsonl"
     with open(out_jsonl, "w", encoding="utf-8") as f:
         for r in results:
             f.write(json.dumps(r) + "\n")
 
     # Generate Markdown Summary Report
-    out_md = "eval_results/NEMOTRON_BASELINE_REPORT.md"
+    out_md = f"eval_results/{out_report_name}"
     with open(out_md, "w", encoding="utf-8") as f:
-        f.write("# Baseline Evaluation: Nemotron Lightning 3.5 30B (Base)\n\n")
-        f.write(f"Evaluated on {total} synthetic test cases using Fireworks endpoint `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b`.\n\n")
+        f.write(f"# Evaluation Report: {model_display_name}\n\n")
+        f.write(f"Evaluated on {total} synthetic test cases using Fireworks endpoint `{args.model}`.\n\n")
         f.write("## Overall Metrics\n\n")
         f.write("| Metric | Score | Percentage |\n")
         f.write("|---|---|---|\n")
@@ -318,7 +324,7 @@ def main():
         f.write("## Per-Case Breakdown\n\n")
         f.write("| Case ID | Gold Pattern | Pred Pattern | Match | Gold Sev | Pred Sev | Escalate Match |\n")
         f.write("|---|---|---|---|---|---|---|\n")
-        for r in results:
+        for r in sorted(results, key=lambda x: x["id"]):
             match_str = "Exact" if r.get("exact_pattern_match") else ("Fuzzy" if r.get("fuzzy_pattern_match") else "Miss")
             f.write(f"| `{r['id']}` | `{r.get('gold_pattern')}` | `{r.get('pred_pattern', 'N/A')}` | {match_str} | {r.get('gold_severity')} | {r.get('pred_severity')} | {r.get('escalate_match')} |\n")
 
