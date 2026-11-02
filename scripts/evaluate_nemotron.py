@@ -9,10 +9,21 @@ import re
 import sys
 import json
 import time
+import math
 import argparse
 import urllib.request
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def wilson_ci(successes, total):
+    if total == 0:
+        return 0.0, 0.0, 0.0
+    z = 1.959963984540054
+    p = successes / total
+    denom = 1 + z**2 / total
+    centre_adj_p = (p + z**2 / (2 * total)) / denom
+    margin = (z * math.sqrt((p * (1 - p) + z**2 / (4 * total)) / total)) / denom
+    return p * 100, max(0.0, centre_adj_p - margin) * 100, min(1.0, centre_adj_p + margin) * 100
 
 ALLOWED_PATTERNS = [
     "fail_plausible_swallow",
@@ -224,13 +235,16 @@ def evaluate_case(case, api_key, model_name="accounts/fireworks/models/nemotron-
 def main():
     parser = argparse.ArgumentParser(description="Evaluate Nemotron on synthetic test cases")
     parser.add_argument("--model", type=str, default="accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b", help="Model endpoint on Fireworks")
+    parser.add_argument("--dataset", type=str, default="data/synthetic_test_cases_500.jsonl", help="Dataset path")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of test cases to evaluate")
     parser.add_argument("--quick", action="store_true", help="Run 1 case per pattern (15 cases total)")
-    parser.add_argument("--workers", type=int, default=3, help="Concurrent worker threads")
+    parser.add_argument("--workers", type=int, default=6, help="Concurrent worker threads")
     args = parser.parse_args()
 
     api_key = load_api_key()
-    dataset_file = "data/synthetic_test_cases.jsonl"
+    dataset_file = args.dataset
+    if not os.path.exists(dataset_file):
+        dataset_file = "data/synthetic_test_cases.jsonl"
     if not os.path.exists(dataset_file):
         print(f"Error: {dataset_file} not found.")
         sys.exit(1)
@@ -307,19 +321,27 @@ def main():
     # Generate Markdown Summary Report
     out_md = f"eval_results/{out_report_name}"
     with open(out_md, "w", encoding="utf-8") as f:
-        f.write(f"# Evaluation Report: {model_display_name}\n\n")
+        jv_p, jv_l, jv_u = wilson_ci(json_valid_cnt, total)
+        ep_p, ep_l, ep_u = wilson_ci(exact_pat_cnt, total)
+        fp_p, fp_l, fp_u = wilson_ci(fuzzy_pat_cnt, total)
+        sv_p, sv_l, sv_u = wilson_ci(sev_cnt, total)
+        es_p, es_l, es_u = wilson_ci(esc_cnt, total)
+        fe_p, fe_l, fe_u = wilson_ci(false_esc_cnt, total)
+        me_p, me_l, me_u = wilson_ci(missed_esc_cnt, total)
+
+        f.write("# Evaluation Report: " + model_display_name + "\n\n")
         f.write(f"Evaluated on {total} synthetic test cases using Fireworks endpoint `{args.model}`.\n\n")
-        f.write("## Overall Metrics\n\n")
-        f.write("| Metric | Score | Percentage |\n")
-        f.write("|---|---|---|\n")
-        f.write(f"| **JSON Validity** | {json_valid_cnt} / {total} | {json_valid_cnt/total*100:.1f}% |\n")
-        f.write(f"| **Exact Pattern Match** | {exact_pat_cnt} / {total} | {exact_pat_cnt/total*100:.1f}% |\n")
-        f.write(f"| **Fuzzy / Semantic Pattern Match** | {fuzzy_pat_cnt} / {total} | {fuzzy_pat_cnt/total*100:.1f}% |\n")
-        f.write(f"| **Severity Accuracy** | {sev_cnt} / {total} | {sev_cnt/total*100:.1f}% |\n")
-        f.write(f"| **Escalation Accuracy** | {esc_cnt} / {total} | {esc_cnt/total*100:.1f}% |\n")
-        f.write(f"| **False Escalation Rate** | {false_esc_cnt} cases | {false_esc_cnt/total*100:.1f}% |\n")
-        f.write(f"| **Missed Escalation Rate** | {missed_esc_cnt} cases | {missed_esc_cnt/total*100:.1f}% |\n")
-        f.write(f"| **Average Latency** | {avg_latency:.2f}s | - |\n\n")
+        f.write("## Overall Metrics (with 95% Wilson Confidence Intervals)\n\n")
+        f.write("| Metric | Score | Percentage | 95% Confidence Interval |\n")
+        f.write("|---|---|---|---|\n")
+        f.write(f"| **JSON Validity** | {json_valid_cnt} / {total} | {jv_p:.1f}% | [{jv_l:.1f}% - {jv_u:.1f}%] |\n")
+        f.write(f"| **Exact Pattern Match** | {exact_pat_cnt} / {total} | {ep_p:.1f}% | [{ep_l:.1f}% - {ep_u:.1f}%] |\n")
+        f.write(f"| **Fuzzy / Semantic Pattern Match** | {fuzzy_pat_cnt} / {total} | {fp_p:.1f}% | [{fp_l:.1f}% - {fp_u:.1f}%] |\n")
+        f.write(f"| **Severity Accuracy** | {sev_cnt} / {total} | {sv_p:.1f}% | [{sv_l:.1f}% - {sv_u:.1f}%] |\n")
+        f.write(f"| **Escalation Accuracy** | {esc_cnt} / {total} | {es_p:.1f}% | [{es_l:.1f}% - {es_u:.1f}%] |\n")
+        f.write(f"| **False Escalation Rate** | {false_esc_cnt} cases | {fe_p:.1f}% | [{fe_l:.1f}% - {fe_u:.1f}%] |\n")
+        f.write(f"| **Missed Escalation Rate** | {missed_esc_cnt} cases | {me_p:.1f}% | [{me_l:.1f}% - {me_u:.1f}%] |\n")
+        f.write(f"| **Average Latency** | {avg_latency:.2f}s | - | - |\n\n")
 
         f.write("## Per-Case Breakdown\n\n")
         f.write("| Case ID | Gold Pattern | Pred Pattern | Match | Gold Sev | Pred Sev | Escalate Match |\n")
