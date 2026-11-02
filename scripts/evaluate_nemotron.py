@@ -127,7 +127,7 @@ def evaluate_case(case, api_key, model_name="accounts/fireworks/models/nemotron-
         "- agentic_supply_chain\n"
         "- unsafe_automation_brittleness\n"
         "- visual_ui_injection\n\n"
-        "Do not include preamble or code fences. Output raw JSON only."
+        "Keep internal reasoning concise (under 200 tokens). Do not include preamble or code fences. Output raw JSON only."
     )
 
     url = "https://api.fireworks.ai/inference/v1/chat/completions"
@@ -174,6 +174,8 @@ def evaluate_case(case, api_key, model_name="accounts/fireworks/models/nemotron-
         }
 
     cleaned = clean_json(raw_content)
+    if not cleaned and reasoning:
+        cleaned = clean_json(reasoning)
     parsed = None
     json_valid = False
     try:
@@ -271,10 +273,18 @@ def main():
     results = []
     t_start = time.time()
 
-    is_ultra = "ultra" in args.model.lower()
-    model_display_name = "Nemotron-3 Ultra NVFP4 (~120B+)" if is_ultra else "Nemotron Lightning 3.5 30B (Base)"
-    out_prefix = "nemotron_ultra" if is_ultra else "nemotron"
-    out_report_name = "NEMOTRON_ULTRA_REPORT.md" if is_ultra else "NEMOTRON_BASELINE_REPORT.md"
+    if "first-fast-action" in args.model.lower() or "ft-" in args.model.lower() or "ofe8xcd1" in args.model.lower():
+        model_display_name = "Fine-Tuned Nemotron 30B (First Fast Action Frontier)"
+        out_prefix = "nemotron_finetuned"
+        out_report_name = "NEMOTRON_FINETUNED_REPORT.md"
+    elif "ultra" in args.model.lower():
+        model_display_name = "Nemotron-3 Ultra NVFP4 (~120B+)"
+        out_prefix = "nemotron_ultra"
+        out_report_name = "NEMOTRON_ULTRA_REPORT.md"
+    else:
+        model_display_name = "Nemotron Lightning 3.5 30B (Base)"
+        out_prefix = "nemotron"
+        out_report_name = "NEMOTRON_BASELINE_REPORT.md"
 
     print(f"Evaluating {model_display_name} with {args.workers} concurrent workers...")
     with ThreadPoolExecutor(max_workers=args.workers) as executor:

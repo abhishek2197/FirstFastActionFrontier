@@ -13,7 +13,7 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional, Tuple
 
-LIGHTNING_MODEL = "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
+LIGHTNING_MODEL = os.environ.get("STUDENT_MODEL", "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b")
 ULTRA_MODEL = "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
 
 TRIAGE_SYSTEM_PROMPT = (

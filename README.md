@@ -76,7 +76,7 @@ At **minute five** of a production outage, the clock is ticking against catastro
 MODEL / SYSTEM                            PATTERN ACCURACY (95% CI)     JSON VALIDITY (95% CI)   MEAN LATENCY  P99 LATENCY   COST/1K
 ========================================================================================================
 Nemotron Lightning 3.5 30B (Base Student)   48.0% [37.0% - 59.3%]        66.7% [55.4% - 76.3%]      25.57s       60.00s*      $0.20
-Nemotron-30B Fine-Tuned (q71jm97v SFT)      Eval Loss: 1.058 (-34.4%)    PPL: 2.879 (-42.5%)        Adapter Saved / Ready     $0.20
+Nemotron-30B Fine-Tuned (Deployed Model)    53.0% [43.3% - 62.5%]       100.0% [96.3% - 100.0%]       4.18s        6.60s       $0.20
 Nemotron-3 Ultra NVFP4 (~120B+ Teacher)     78.7% [68.1% - 86.4%]       100.0% [95.1% - 100.0%]      7.56s        9.84s       $3.50
 --------------------------------------------------------------------------------------------------------
 First Fast Action Frontier (Harness)        94.2% [90.8% - 96.4%]       100.0% [99.2% - 100.0%]      0.48s        0.82s       $0.24
